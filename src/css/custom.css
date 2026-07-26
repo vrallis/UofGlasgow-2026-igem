@@ -1,0 +1,203 @@
+/**
+ * Synwave wiki — global theme.
+ * 1) Pulls the three brand fonts.
+ * 2) Defines the keyframes the custom React pages reference (fadeUp, glowPulse).
+ * 3) Re-skins Docusaurus (Infima) so the generated MARKDOWN docs + the theme
+ *    navbar/footer match the navy/gold Synwave system used on the custom pages.
+ *
+ * Docusaurus auto-loads this file (configured in docusaurus.config.js →
+ * presets → theme → customCss).
+ */
+
+/* Self-hosted @font-face rules — never a CDN, see fonts.css for why. */
+@import './fonts.css';
+
+/* Math rendering (remark-math + rehype-katex). Imported from node_modules so
+ * webpack emits katex.min.css AND its font files under baseUrl. Do NOT move this
+ * to `stylesheets` in docusaurus.config.ts — that field is not baseUrl-aware. */
+@import '~katex/dist/katex.min.css';
+
+/* ---- keyframes used by custom pages ---- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(34px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes glowPulse {
+  0%, 100% { opacity: .5; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: .8; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes scrollPulse {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  45%  { transform: scaleY(1); transform-origin: top; }
+  55%  { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-16px); }
+}
+
+::selection { background: #F0C581; color: #111749; }
+
+/* ---- Infima theme variables ---- */
+:root {
+  --ifm-color-primary: #C79233;
+  --ifm-color-primary-dark: #b3822c;
+  --ifm-color-primary-darker: #a97a29;
+  --ifm-color-primary-darkest: #8b6522;
+  --ifm-color-primary-light: #d0a04a;
+  --ifm-color-primary-lighter: #d6aa59;
+  --ifm-color-primary-lightest: #e0bd7e;
+
+  --ifm-font-family-base: 'Archivo', system-ui, sans-serif;
+  --ifm-heading-font-family: 'Sora', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'IBM Plex Mono', monospace;
+  --ifm-heading-font-weight: 700;
+
+  --ifm-navbar-background-color: rgba(12, 16, 54, 0.9);
+  --ifm-navbar-link-color: #9EAAD0;
+  --ifm-navbar-link-hover-color: #F0C581;
+  --ifm-footer-background-color: #0C1036;
+
+  /* Light-mode highlighted code line: subtle gold, keeps syntax readable
+     (default was a muddy black overlay). */
+  --docusaurus-highlighted-code-line-bg: rgba(199, 146, 51, 0.16);
+}
+
+/* Dark mode is the Synwave default look; tune the doc reading surface. */
+[data-theme='dark'] {
+  --ifm-color-primary: #F0C581;
+  --ifm-color-primary-dark: #ecb75f;
+  --ifm-color-primary-light: #f4d3a3;
+  --ifm-background-color: #0C1036;
+  --ifm-background-surface-color: #111749;
+  --ifm-font-color-base: #EAEEF8;
+  --ifm-heading-color: #FFFFFF;
+  --ifm-toc-border-color: rgba(234, 238, 248, 0.08);
+  --ifm-color-content-secondary: #9EAAD0;
+  /* Dark-mode highlighted code line: gold tint over the dracula bg. */
+  --docusaurus-highlighted-code-line-bg: rgba(240, 197, 129, 0.14);
+}
+
+/* Mark highlighted lines with a gold left-edge so they read as "important"
+   instead of just a dim background, in either color mode. */
+.theme-code-block-highlighted-line {
+  box-shadow: inset 3px 0 0 var(--ifm-color-primary);
+}
+
+/* Navbar: glassy navy to match the custom hero nav. */
+.navbar {
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(234, 238, 248, 0.08);
+}
+.navbar__title,
+.navbar__brand {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  color: #EAEEF8;
+}
+.navbar__link { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+
+/* Gold "Explore"-style call-to-action button in the navbar (add className
+   "button button--primary" to a navbar item, or use this on .navbar__link--cta). */
+.navbar__link--cta {
+  color: #111749 !important;
+  background: #F0C581;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* Footer (theme footer, shown below custom pages and on doc pages). */
+.footer { border-top: 1px solid rgba(234, 238, 248, 0.08); }
+.footer__title { font-family: 'Sora', sans-serif; color: #EAEEF8; }
+.footer__link-item { color: #9EAAD0; }
+.footer__link-item:hover { color: #F0C581; }
+.footer__copyright { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7986B0; }
+
+/* Headings on doc pages get the Sora treatment automatically via the var,
+   but tighten the tracking to match the brand. */
+.markdown h1, .markdown h2, .markdown h3 { letter-spacing: -0.02em; }
+
+/* Dark-only custom pages (home, team, …): hide the light/dark switch. These
+   pages are locked to the Synwave navy design and have no light variant, so the
+   toggle is meaningless. The body class is set by the useDarkOnly() hook; docs
+   and blog pages never set it and therefore keep the toggle. Covers both the
+   navbar toggle and the mobile/responsive one in the slide-out menu. */
+body.synwave-darkonly [class*='colorModeToggle_'],
+body.synwave-darkonly .navbar-sidebar__brand [class*='toggle_'] {
+  display: none !important;
+}
+
+/* The navbar is permanently navy in BOTH color modes (bg set once in :root).
+   In light mode Docusaurus colors the toggle icon dark, so it vanishes against
+   the navy bar. Pin the icon to the navbar link color regardless of theme. */
+/* Breathing room between the Explore CTA and the toggle. Scoped to the toggle
+   itself, so it only applies where the toggle is shown (docs/blog) — on the
+   dark-only custom pages the toggle is display:none and this is inert. */
+.navbar [class*='colorModeToggle_'] {
+  margin-left: 0.75rem;
+}
+.navbar [class*='colorModeToggle_'] .clean-btn {
+  color: var(--ifm-navbar-link-color);
+}
+.navbar [class*='colorModeToggle_'] .clean-btn:hover {
+  color: var(--ifm-navbar-link-hover-color);
+  background: rgba(240, 197, 129, 0.12);
+}
+
+/* ---- Custom-page mobile tuning ----
+   Font sizes and paddings on the custom pages scale via clamp() inline (no
+   media query needed) — this block handles only what clamp can't. */
+
+/* Belt-and-braces against horizontal overflow. Firefox (unlike Chrome) expands
+   its mobile layout viewport to fit any element wider than the screen, which
+   reads as the page loading "zoomed in". Clamp the custom pages so a stray wide
+   element (wordmark, marquee, decorative glow) is clipped instead.
+   Scoped to body.synwave-darkonly (home/team only) so the docs' sticky
+   sidebar/TOC — which needs a visible overflow on its scroll ancestors — is
+   untouched. */
+html, body { max-width: 100%; }
+body.synwave-darkonly { overflow-x: hidden; }
+
+@media (max-width: 768px) {
+  /* Hero logo is absolutely positioned right, behind the headline — it crowds
+     the text on narrow screens, so drop it. */
+  .synwave-hero-logo { display: none !important; }
+  /* The "SCROLL" cue is pinned to the hero's bottom-centre; on short mobile
+     viewports it collides with the CTA buttons. Hide it. */
+  .synwave-scroll-cue { display: none !important; }
+  /* Story section 02 is reversed on desktop (image left, text right) via flex
+     `order`. Stacked on mobile that puts the diagram ABOVE its heading, unlike
+     the other sections. Reset order so the heading leads, image follows. */
+  .story-flip-text, .story-flip-media { order: 0 !important; }
+}
+
+/* Mobile slide-out menu (hamburger). The navbar background is intentionally
+   semi-transparent for the glassy hero look, which left the slide-out panel
+   looking see-through/"invisible" on phones. Force it solid navy so the menu
+   is actually readable when opened. */
+@media (max-width: 996px) {
+  /* THE fix: backdrop-filter on .navbar establishes a containing block for its
+     fixed-position descendants, which collapses the fixed mobile slide-out
+     sidebar to the navbar's own ~60px box — so it animates but is "nowhere to
+     be seen". Drop the blur on mobile so the sidebar positions against the
+     viewport. The desktop navbar keeps its glassy blur. */
+  .navbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .navbar-sidebar {
+    background: #0C1036 !important;
+    z-index: 300 !important;
+  }
+  .navbar-sidebar__items,
+  .navbar-sidebar__brand {
+    background: #0C1036 !important;
+  }
+  .navbar-sidebar__backdrop { background: rgba(8, 11, 38, 0.6); }
+}

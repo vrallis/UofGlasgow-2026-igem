@@ -1,26 +1,38 @@
+# GitLab CI — builds the Synwave Docusaurus wiki and deploys it to iGEM GitLab Pages.
+#
+# iGEM publishes each team's wiki at:   https://<year>.igem.wiki/<team>/
+#   e.g.  https://2026.igem.wiki/uofglasgow/
+#
+# IMPORTANT: docusaurus.config.ts must match that path, or every asset 404s:
+#   url:     'https://2026.igem.wiki',
+#   baseUrl: '/uofglasgow/',          // leading AND trailing slash, = the path iGEM gives you
+#
+# This pipeline runs ONLY on the default branch (main). Other branches/MRs do nothing.
+
 image: node:22
 
+stages:
+  - deploy
+
 pages:
-  stage: build
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH   # main only
+  variables:
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"            # let CI fetch the pinned pnpm without prompting
   cache:
-    - key:
-        files:
-          - yarn.lock
-      paths:
-        - .yarn-cache/
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
   before_script:
-    - echo 'yarn-offline-mirror ".yarn-cache/"' >> .yarnrc
-    - echo 'yarn-offline-mirror-pruning true' >> .yarnrc
-    - yarn install --frozen-lockfile
+    - corepack enable
+    - pnpm config set store-dir .pnpm-store         # cacheable store
+    - pnpm install --frozen-lockfile                # uses packageManager pin (pnpm@11.7.0) + allowBuilds
   script:
-    - yarn build
-    - cp -a dist/. public/
-    - echo '/* /index.html 200' > public/_redirects
+    - pnpm build                                    # outputs to build/
+    - rm -rf public && mv build public              # GitLab Pages serves from public/
   artifacts:
     paths:
       - public
-  rules:
-    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
-      when: never # No runners will run on branches other than main
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: always
