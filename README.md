@@ -200,3 +200,5 @@ the GitLab key and the GitHub secret, then run the mirror manually to confirm.
 - [Mermaid](https://mermaid.js.org) — diagrams in ` ```mermaid ` code blocks
 - [Recharts](https://recharts.org) — charts from your own data
 - [TypeScript](https://www.typescriptlang.org) — config and sidebars
+
+<!-- mirror pipeline verified 2026-07-27 -->
