@@ -1,7 +1,7 @@
 # Design: GitHub as source of truth, mirrored to iGEM GitLab
 
 **Date:** 2026-07-27
-**Status:** Approved, not yet implemented
+**Status:** Implemented. Amended 2026-07-27 — see "Why the push is not forced".
 
 ## Problem
 
@@ -39,7 +39,7 @@ content on GitLab.
          .github/workflows/mirror-to-gitlab.yml
                   │  1. pnpm install --frozen-lockfile
                   │  2. pnpm build          ◀── gate: fail here = no mirror
-                  │  3. git push --force gitlab HEAD:main
+                  │  3. git push gitlab HEAD:main
                   ▼
             iGEM GitLab (deploy target, main only)
                   │  .gitlab-ci.yml (unchanged)
@@ -50,12 +50,28 @@ content on GitLab.
 Feature branches, pull requests, reviews and issues live only on GitHub. GitLab
 receives `main` and nothing else.
 
-### Why force-push is safe here
+### Why the push is not forced
 
-Nobody commits directly on GitLab — this is a stated team rule, recorded in
-`CLAUDE.md` and `README.md`. GitLab therefore holds no commits that GitHub lacks,
-and force-push cannot destroy work. It also means the mirror never has to reason
-about divergence or fast-forward failures.
+**Amended 2026-07-27, after the first mirror attempt failed.**
+
+The original design force-pushed, reasoning that nobody commits on GitLab so
+force-push could not destroy work. Two things were wrong with that.
+
+First, the premise was already false: `synwave-migration` had been merged on
+GitLab as merge request !1 (`5db2207`) the day before, and again on GitHub as
+pull request #1. Two independent merge commits of the same branch left the two
+`main` branches genuinely divergent. That was reconciled with an empty merge
+commit making GitHub `main` a descendant of GitLab `main`.
+
+Second, and permanently: iGEM protects `main`, and a protected branch rejects
+non-fast-forward pushes regardless of the flag. A Developer-role force push is
+therefore impossible, so `--force` bought nothing and could only mask problems.
+
+The mirror pushes plainly. If GitHub and GitLab diverge, the push fails loudly
+and a human reconciles — the same principle the daily drift check is built on.
+The cost is that a genuine history rewrite on GitHub `main` must be reconciled by
+hand. Since force-push is impossible here, that cost is unavoidable rather than
+chosen.
 
 ## Authentication
 
@@ -85,7 +101,7 @@ repository is therefore safe.
 
 | Trigger | Behaviour |
 |---|---|
-| `push` to `main` | install → `pnpm build` → on success, force-push `HEAD:main` to GitLab |
+| `push` to `main` | install → `pnpm build` → on success, push `HEAD:main` to GitLab |
 | `workflow_dispatch` | Same as above, run manually. The freeze-eve button. |
 | `schedule`, daily | No build. `git ls-remote` GitLab and compare to GitHub `main`. Equal → exit. Different → push (self-heal). Auth failure → job fails → GitHub notifies. |
 
@@ -110,7 +126,7 @@ and never reach `main`.
 | Build fails | No push. GitLab keeps serving the last good deploy. GitHub shows red. |
 | Key revoked or expired | Job fails, GitHub notifies. GitLab holds last good state. |
 | **Freeze active** | GitLab rejects the push and the mirror job fails on every push to `main`. **This is expected, not an incident.** Work continues on GitHub; GitLab holds the frozen judged state. |
-| GitHub `main` force-pushed | Mirror force-pushes to match. Intentional — GitHub is authoritative. |
+| GitHub `main` history rewritten | Mirror push fails as non-fast-forward. Reconcile by hand — see "Why the push is not forced". |
 
 ## Freeze playbook
 

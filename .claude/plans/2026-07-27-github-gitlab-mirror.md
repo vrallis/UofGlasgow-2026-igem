@@ -10,6 +10,19 @@
 
 **Spec:** `.claude/specs/2026-07-27-github-gitlab-mirror-design.md`
 
+> **Amended 2026-07-27, during execution.** This plan was written before the
+> first mirror attempt. Two things changed and the workflow files on disk are
+> authoritative where they differ from the YAML quoted below:
+>
+> 1. **The push is not forced.** iGEM protects `main`, so a protected branch
+>    rejects non-fast-forward pushes regardless of the flag — `--force` was
+>    impossible and would only have masked divergence. See the spec section
+>    "Why the push is not forced".
+> 2. **`package-manager-cache: false`** is set on `actions/setup-node@v5`. Its
+>    default of `true` reads `packageManager` from `package.json` and runs pnpm
+>    to locate its store, but pnpm does not exist until `corepack enable` runs,
+>    so the job died before installing anything.
+
 ## Global Constraints
 
 - Node `>=20` (`engines`), CI uses **22** to match `.gitlab-ci.yml`'s `image: node:22`.

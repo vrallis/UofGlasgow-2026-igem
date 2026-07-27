@@ -144,11 +144,17 @@ Day-to-day: branch off `main` on GitHub, open a pull request. `Build check` runs
 `pnpm typecheck` and `pnpm build` on it. Merge when green.
 
 On merge, `Mirror main to iGEM GitLab` builds the site again and — only if that
-build succeeds — force-pushes `main` to GitLab. `.gitlab-ci.yml` then runs there:
+build succeeds — pushes `main` to GitLab. `.gitlab-ci.yml` then runs there:
 it installs with the pinned pnpm, runs `pnpm build`, and moves `build/` to
 `public/` because GitLab Pages serves from `public/`. The result is published at
 <https://2026.igem.wiki/uofglasgow/>. A broken commit never reaches GitLab, so
 the published wiki always corresponds to a build that passed.
+
+The mirror pushes without `--force`, on purpose. iGEM protects `main`, so a
+Developer-role push could never be a force push anyway. More importantly, if the
+two ever diverge — because someone committed on GitLab by hand — a plain push
+fails loudly and a human decides what to do, rather than the mirror silently
+overwriting it.
 
 A scheduled run each morning checks that GitLab still matches GitHub. It exists
 to catch a revoked or expired SSH key weeks before the wiki freeze rather than on

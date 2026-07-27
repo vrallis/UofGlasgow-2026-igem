@@ -1,7 +1,7 @@
 name: Mirror main to iGEM GitLab
 
 # GitHub is the source of truth. iGEM GitLab is a deploy target that receives
-# `main` and nothing else, so force-pushing is safe: nobody commits there.
+# `main` and nothing else, and is never written to by hand.
 #
 #   push to main   -> build, then push (a broken build never reaches GitLab)
 #   manual         -> same. This is the freeze-eve "sync now" button.
@@ -101,9 +101,14 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
+      # Deliberately not --force. iGEM protects `main`, so a Developer-role
+      # push can never be a force push anyway; the flag would only hide
+      # problems. A plain push fails loudly if the two have diverged, which is
+      # what we want: divergence means someone wrote to GitLab by hand, and
+      # that needs a human, not a silent overwrite.
       - name: Push main to iGEM GitLab
         if: steps.drift.outputs.in_sync == 'false'
-        run: git push --force "$GITLAB_REMOTE" HEAD:refs/heads/main
+        run: git push "$GITLAB_REMOTE" HEAD:refs/heads/main
 
       - name: Summary
         if: always()
