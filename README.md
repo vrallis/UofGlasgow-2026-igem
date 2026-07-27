@@ -31,9 +31,10 @@ For up-to-date requirements, resources, help and guidance, visit
 
 ## Getting started
 
-1. Clone the repository:
+1. Clone the repository from **GitHub** (not GitLab — see
+   [Repositories and deployment](#repositories-and-deployment)):
    ```bash
-   git clone https://gitlab.igem.org/2026/uofglasgow
+   git clone git@github.com:vrallis/UofGlasgow-2026-igem.git uofglasgow
    cd uofglasgow
    ```
 2. Enable `pnpm` (this repo pins its version via `packageManager` in
@@ -51,8 +52,9 @@ For up-to-date requirements, resources, help and guidance, visit
    pnpm start
    ```
 5. Edit content (see [Where to edit](#where-to-edit) below).
-6. Commit to the **`main`** branch. GitLab CI builds and deploys the wiki
-   automatically — see [Deployment](#deployment).
+6. Open a pull request against **`main`** on GitHub. Once merged, the wiki
+   deploys automatically — see
+   [Repositories and deployment](#repositories-and-deployment).
 
 Useful commands:
 
@@ -129,14 +131,59 @@ Note that `stylesheets` and `scripts` in `docusaurus.config.ts` are **not**
 baseUrl-aware. Import CSS from `src/css/custom.css` instead — that is why KaTeX's
 stylesheet is imported there rather than declared in the config.
 
-## Deployment
+## Repositories and deployment
 
-`.gitlab-ci.yml` runs on **`main` only**. It installs with the pinned pnpm, runs
-`pnpm build`, and moves `build/` to `public/` because GitLab Pages serves from
-`public/`. Other branches and merge requests build nothing.
+**GitHub is the source of truth. Never commit directly on iGEM GitLab.**
 
-Run `pnpm build` locally before pushing to `main` — a build failure in CI means no
-new wiki gets published.
+| Where       | Role                                                            |
+| ----------- | --------------------------------------------------------------- |
+| GitHub      | All work: branches, pull requests, review, issues                |
+| iGEM GitLab | Deploy target. Receives `main` only, written by CI, never by hand |
+
+Day-to-day: branch off `main` on GitHub, open a pull request. `Build check` runs
+`pnpm typecheck` and `pnpm build` on it. Merge when green.
+
+On merge, `Mirror main to iGEM GitLab` builds the site again and — only if that
+build succeeds — force-pushes `main` to GitLab. `.gitlab-ci.yml` then runs there:
+it installs with the pinned pnpm, runs `pnpm build`, and moves `build/` to
+`public/` because GitLab Pages serves from `public/`. The result is published at
+<https://2026.igem.wiki/uofglasgow/>. A broken commit never reaches GitLab, so
+the published wiki always corresponds to a build that passed.
+
+A scheduled run each morning checks that GitLab still matches GitHub. It exists
+to catch a revoked or expired SSH key weeks before the wiki freeze rather than on
+the day of it. **If you get a failure email from it, do not ignore it.**
+
+Run `pnpm build` locally before opening a pull request.
+
+### Before the wiki freeze
+
+1. Merge everything to `main` well ahead of the deadline.
+2. Actions → **Mirror main to iGEM GitLab** → **Run workflow**. Confirm green.
+3. Confirm the **GitLab** pipeline also went green at
+   <https://gitlab.igem.org/2026/uofglasgow/-/pipelines>. A green GitHub build only
+   proves the site compiles — GitLab's pipeline is what actually publishes Pages.
+4. Load <https://2026.igem.wiki/uofglasgow/> and confirm it is current.
+
+**During the freeze the mirror job will fail on every push. That is expected, not
+an incident** — GitLab rejects all writes while frozen. Keep working on GitHub;
+GitLab holds the frozen state that gets judged.
+
+### Mirror credentials
+
+The mirror authenticates over SSH as a dedicated, passphrase-free key stored as
+the GitHub Actions secret `MIRROR_SSH_KEY`, with its public half registered on a
+team member's GitLab account (Preferences → SSH Keys, usage type **Write**).
+iGEM grants teams only Developer role, which rules out deploy keys and project
+access tokens, so an account key is the only option.
+
+The workflow pins iGEM's SSH host key rather than disabling host-key checking.
+If it ever fails with `Host key verification failed`, iGEM rotated their key —
+re-run `ssh-keyscan -t ed25519 ssh.gitlab.igem.org`, confirm the new value out of
+band, and update the pin in `.github/workflows/mirror-to-gitlab.yml`.
+
+Note the key's expiry date. When it lapses, generate a new keypair, update both
+the GitLab key and the GitHub secret, then run the mirror manually to confirm.
 
 ## Technologies
 

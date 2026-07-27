@@ -21,6 +21,9 @@ no external CDNs).
   and `scripts` in `docusaurus.config.ts` are not baseUrl-aware — don't use them.
 - In JSX use `<Link to>` and `useBaseUrl()`, never raw `<a href="/…">` or
   `src="/…"` for internal paths.
+- GitHub is the source of truth; iGEM GitLab is a deploy target written only by
+  `.github/workflows/mirror-to-gitlab.yml`. Never push to the GitLab remote by
+  hand, and don't add workflows that write to it.
 - `.gitlab-ci.yml` works as-is; change it only if you know what you're doing —
   any build/deploy issues that result are the team's responsibility.
 - Run `pnpm build` before claiming a change works.

@@ -1,0 +1,47 @@
+name: Build check
+
+# Runs on every pull request so a broken build is caught at review time and
+# never reaches `main`. Merging to `main` triggers mirror-to-gitlab.yml, which
+# publishes to iGEM GitLab — so this is the first of two gates.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # setup-node@v5 defaults this to true: it reads `packageManager` from
+          # package.json and runs pnpm to find its store to cache. pnpm does not
+          # exist until `corepack enable` runs below, so leaving it on fails the
+          # job before installing anything.
+          package-manager-cache: false
+
+      - name: Enable pinned pnpm
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build

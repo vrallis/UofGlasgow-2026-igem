@@ -1,0 +1,116 @@
+name: Mirror main to iGEM GitLab
+
+# GitHub is the source of truth. iGEM GitLab is a deploy target that receives
+# `main` and nothing else, so force-pushing is safe: nobody commits there.
+#
+#   push to main   -> build, then push (a broken build never reaches GitLab)
+#   manual         -> same. This is the freeze-eve "sync now" button.
+#   daily schedule -> no build; re-push only if GitLab has drifted. Its real job
+#                     is to fail loudly when the SSH key expires or is revoked,
+#                     weeks before the wiki freeze rather than on the day.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *"
+
+permissions:
+  contents: read
+
+# Never let two mirror runs push at once.
+concurrency:
+  group: mirror-to-gitlab
+  cancel-in-progress: false
+
+env:
+  GITLAB_REMOTE: git@ssh.gitlab.igem.org:2026/uofglasgow.git
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v5
+        with:
+          # A shallow clone cannot be pushed as a complete history.
+          fetch-depth: 0
+
+      - name: Configure SSH for iGEM GitLab
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+        run: |
+          if [ -z "$MIRROR_SSH_KEY" ]; then
+            echo "::error::Secret MIRROR_SSH_KEY is not set on this repository."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$MIRROR_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # iGEM's host key is pinned deliberately. Do not relax strict host key
+          # checking here — that would let any host answering for this name be
+          # trusted, and we push a whole repository to it.
+          cat > ~/.ssh/known_hosts <<'EOF'
+          ssh.gitlab.igem.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMk+O4X7TW0ThKHCON769PMtvcX+uJQ5hRssTaVCeWYd
+          EOF
+          chmod 600 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host ssh.gitlab.igem.org
+            User git
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Compare GitHub main to GitLab main
+        id: drift
+        run: |
+          local_sha="$(git rev-parse HEAD)"
+          # A failure here means the key is dead or GitLab is unreachable.
+          # `set -e` is on by default, so the job fails and GitHub notifies us.
+          remote_sha="$(git ls-remote "$GITLAB_REMOTE" refs/heads/main | cut -f1)"
+          echo "GitHub main: ${local_sha}"
+          echo "GitLab main: ${remote_sha:-<empty>}"
+          if [ "$local_sha" = "$remote_sha" ]; then
+            echo "in_sync=true" >> "$GITHUB_OUTPUT"
+            echo "GitLab is already up to date. Nothing to do."
+          else
+            echo "in_sync=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Scheduled runs skip the build: whatever is on `main` was already gated
+      # by the push-triggered run, so a self-heal push needs no re-verification.
+      - name: Set up Node 22
+        if: steps.drift.outputs.in_sync == 'false' && github.event_name != 'schedule'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # See ci.yml: v5 tries to cache the pnpm store before corepack has
+          # provided pnpm, which fails the job.
+          package-manager-cache: false
+
+      - name: Build, exactly as .gitlab-ci.yml does
+        if: steps.drift.outputs.in_sync == 'false' && github.event_name != 'schedule'
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Push main to iGEM GitLab
+        if: steps.drift.outputs.in_sync == 'false'
+        run: git push --force "$GITLAB_REMOTE" HEAD:refs/heads/main
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.drift.outputs.in_sync }}" = "true" ]; then
+            echo "Already in sync — no push needed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Pushed $(git rev-parse --short HEAD) to GitLab main." >> "$GITHUB_STEP_SUMMARY"
+            echo "Check the GitLab pipeline: https://gitlab.igem.org/2026/uofglasgow/-/pipelines" >> "$GITHUB_STEP_SUMMARY"
+          fi
