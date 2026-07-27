@@ -1,6 +1,12 @@
 # Team UofGlasgow 2026 Wiki
 
-This repository uses `TypeScript` and `React` to manage the wikis.
+This repository holds the iGEM UofGlasgow 2026 wiki (project **Synwave**), built
+with [Docusaurus](https://docusaurus.io) — pages are written as Markdown/MDX,
+with React for the custom landing and team pages.
+
+Published at **<https://2026.igem.wiki/uofglasgow/>**.
+
+## iGEM requirements
 
 This repository **MUST** contain all coding assets to generate your team's wiki
 (HTML, CSS, JavaScript, TypeScript, Python, etc).
@@ -23,69 +29,168 @@ For up-to-date requirements, resources, help and guidance, visit
 > fully responsible for everything you publish: never fabricate scientific
 > results, data, or citations.
 
-## Getting Started
+## Getting started
 
-Before refactoring the code of this template to suit your wiki needs, please make sure you have the ability to use React
-for web development.
-
-1. Clone the repository:
+1. Clone the repository from **GitHub** (not GitLab — see
+   [Repositories and deployment](#repositories-and-deployment)):
    ```bash
-   git clone https://gitlab.igem.org/2026/uofglasgow
+   git clone git@github.com:vrallis/UofGlasgow-2026-igem.git uofglasgow
    cd uofglasgow
    ```
-2. Install the dependencies:
-
+2. Enable `pnpm` (this repo pins its version via `packageManager` in
+   `package.json`, and `corepack` ships with Node):
    ```bash
-   yarn install
+   corepack enable
    ```
-
-   ### Important:
-
-   Ensure you are using Node.js version `>=20.19.0` (Node 22 LTS recommended) to avoid compatibility issues.
-   You can check your Node version by running `node -v` in your terminal.
-
-3. Start the development server:
+3. Install the dependencies:
    ```bash
-   yarn run dev
+   pnpm install
    ```
-4. Navigate to the files you wish to edit:
-   - The main App component can be found under `src/containers/App`
-   - Pre-built components are located under `src/components`
-   - Individual pages can be modified in the `src/pages.ts`
-   - Content pages can be updated in the `src/contents`
-5. Once you are done, save the changes by **committing** them to the _main branch_ of the repository
-6. An automated script will build, test and deploy your wiki to the iGEM server
+   **Node.js `>=20` is required** (Node 22 LTS recommended). Check with `node -v`.
+4. Start the dev server at <http://localhost:3000/uofglasgow/>:
+   ```bash
+   pnpm start
+   ```
+5. Edit content (see [Where to edit](#where-to-edit) below).
+6. Open a pull request against **`main`** on GitHub. Once merged, the wiki
+   deploys automatically — see
+   [Repositories and deployment](#repositories-and-deployment).
 
-## About This Template
+Useful commands:
 
-### Files
+| Command        | What it does                                              |
+| -------------- | --------------------------------------------------------- |
+| `pnpm start`   | Dev server with hot reload                                 |
+| `pnpm build`   | Production build into `build/` — run this before pushing   |
+| `pnpm serve`   | Serve the built site locally, exactly as it will deploy    |
+| `pnpm typecheck` | Type-check the TypeScript config/sidebars                |
+| `pnpm clear`   | Clear the Docusaurus cache when something looks stale      |
 
-Below is the structure of important files and directories in this project:
+## Where to edit
 
-    ├── README.md            -> The file you are currently reading
-    ├── index.html           -> Single HTML file for the wiki
-    ├── package.json         -> Manages project metadata and dependencies
+    ├── docs/                     -> Wiki pages, as Markdown/MDX. Add a file, add it to sidebars.ts
+    │   ├── description.mdx           Project Description
+    │   ├── engineering.mdx           Engineering
+    │   ├── results.mdx               Results
+    │   ├── human-practices.mdx       Human Practices
+    │   ├── notebook.mdx              Lab notebook
+    │   ├── safety.mdx                Safety
+    │   ├── mdx-power.mdx             Reference: everything MDX can do here
+    │   └── _snippets/                Reusable MDX fragments (leading _ = not a page)
     ├── src/
-    │   ├── components/      -> Pre-built components(like Navbar, Footer, etc.)
-    │   ├── containers/
-    │   │   └── App/         -> Main React application container
-    │   ├── contents/
-    │   │   └── *.tsx        -> Page components for the wiki
-    │   ├── main.tsx         -> Entry point of the wiki application
-    │   ├── pages.ts         -> Page definition and path mapping
-    │   ├── utils/           -> Utility functions
-    │   └── vite-env.d.ts    -> TypeScript definitions for Vite
-    ├── tsconfig.json        -> Configures TypeScript options
-    ├── tsconfig.node.json   -> TypeScript settings for Node.js
-    ├── vite.config.ts       -> Configuration for the Vite tool
-    └── yarn.lock            -> Yarn lock file for dependency management
+    │   ├── pages/                -> Custom React pages (index.jsx = landing, team.jsx)
+    │   ├── components/           -> Shared components (Cite, Part, GrowthChart, …)
+    │   ├── data/
+    │   │   ├── team.js               Team members + advisors
+    │   │   ├── references.js         Bibliography used by <Cite />
+    │   │   └── od600.json            Example dataset for <GrowthChart />
+    │   ├── css/
+    │   │   ├── custom.css            Global theme (navy/gold Synwave system)
+    │   │   ├── fonts.css             Self-hosted @font-face rules
+    │   │   └── fonts/                The .woff2 files themselves
+    │   └── theme/
+    │       ├── Footer/index.jsx      Site footer — see the warning below
+    │       └── MDXComponents.js      Components available in every .mdx without importing
+    ├── static/img/               -> Favicon + logo. Prefer static.igem.wiki for new images
+    ├── docs sidebar: sidebars.ts
+    ├── docusaurus.config.ts      -> Site config. `url` + `baseUrl` must match the iGEM path
+    ├── .gitlab-ci.yml            -> Build + deploy pipeline
+    └── docusaurus-export/        -> Original standalone export of the custom pages (reference only)
 
-### Technologies
+### Two things you must not break
 
-- [React](https://reactjs.org): A JavaScript library for building user interfaces
-- [TypeScript](https://www.typescriptlang.org): Extends JavaScript by adding types
-- [Vite](https://vitejs.dev): Frontend tooling that provides faster and leaner development builds
-- [Bootstrap](https://getbootstrap.com): Framework for building responsive, mobile-first sites
-- [React Bootstrap](https://react-bootstrap.github.io): Bootstrap components built with React
-- [React Router](https://reactrouter.com): Declarative routing for React applications
-- (Optional) [Prettier](https://prettier.io): Code formatter
+1. **`url` + `baseUrl` in `docusaurus.config.ts`.** iGEM serves the wiki at
+   `https://2026.igem.wiki/uofglasgow/`, so they must be:
+   ```ts
+   url: 'https://2026.igem.wiki',
+   baseUrl: '/uofglasgow/',   // leading AND trailing slash
+   ```
+   If `baseUrl` is wrong, every asset on every page 404s.
+
+2. **The licence notice and the `gitlab.igem.org` repository link in
+   `src/theme/Footer/index.jsx`.** iGEM requires both on *every* page for judging.
+   That footer is a swizzled component and fully replaces the default one, so the
+   `footer` block in `docusaurus.config.ts` is not what renders — edit the JSX.
+
+### Linking and assets, safely
+
+`baseUrl` is not the domain root, so raw paths break in production. Use the
+Docusaurus helpers:
+
+```jsx
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<Link to="/docs/results">Results</Link>          // ✅  not <a href="/docs/results">
+<img src={useBaseUrl('/img/logo.png')} />        // ✅  not src="/img/logo.png"
+```
+
+In Markdown, ordinary `[text](./other-page.mdx)` links are handled for you.
+
+Note that `stylesheets` and `scripts` in `docusaurus.config.ts` are **not**
+baseUrl-aware. Import CSS from `src/css/custom.css` instead — that is why KaTeX's
+stylesheet is imported there rather than declared in the config.
+
+## Repositories and deployment
+
+**GitHub is the source of truth. Never commit directly on iGEM GitLab.**
+
+| Where       | Role                                                            |
+| ----------- | --------------------------------------------------------------- |
+| GitHub      | All work: branches, pull requests, review, issues                |
+| iGEM GitLab | Deploy target. Receives `main` only, written by CI, never by hand |
+
+Day-to-day: branch off `main` on GitHub, open a pull request. `Build check` runs
+`pnpm typecheck` and `pnpm build` on it. Merge when green.
+
+On merge, `Mirror main to iGEM GitLab` builds the site again and — only if that
+build succeeds — force-pushes `main` to GitLab. `.gitlab-ci.yml` then runs there:
+it installs with the pinned pnpm, runs `pnpm build`, and moves `build/` to
+`public/` because GitLab Pages serves from `public/`. The result is published at
+<https://2026.igem.wiki/uofglasgow/>. A broken commit never reaches GitLab, so
+the published wiki always corresponds to a build that passed.
+
+A scheduled run each morning checks that GitLab still matches GitHub. It exists
+to catch a revoked or expired SSH key weeks before the wiki freeze rather than on
+the day of it. **If you get a failure email from it, do not ignore it.**
+
+Run `pnpm build` locally before opening a pull request.
+
+### Before the wiki freeze
+
+1. Merge everything to `main` well ahead of the deadline.
+2. Actions → **Mirror main to iGEM GitLab** → **Run workflow**. Confirm green.
+3. Confirm the **GitLab** pipeline also went green at
+   <https://gitlab.igem.org/2026/uofglasgow/-/pipelines>. A green GitHub build only
+   proves the site compiles — GitLab's pipeline is what actually publishes Pages.
+4. Load <https://2026.igem.wiki/uofglasgow/> and confirm it is current.
+
+**During the freeze the mirror job will fail on every push. That is expected, not
+an incident** — GitLab rejects all writes while frozen. Keep working on GitHub;
+GitLab holds the frozen state that gets judged.
+
+### Mirror credentials
+
+The mirror authenticates over SSH as a dedicated, passphrase-free key stored as
+the GitHub Actions secret `MIRROR_SSH_KEY`, with its public half registered on a
+team member's GitLab account (Preferences → SSH Keys, usage type **Write**).
+iGEM grants teams only Developer role, which rules out deploy keys and project
+access tokens, so an account key is the only option.
+
+The workflow pins iGEM's SSH host key rather than disabling host-key checking.
+If it ever fails with `Host key verification failed`, iGEM rotated their key —
+re-run `ssh-keyscan -t ed25519 ssh.gitlab.igem.org`, confirm the new value out of
+band, and update the pin in `.github/workflows/mirror-to-gitlab.yml`.
+
+Note the key's expiry date. When it lapses, generate a new keypair, update both
+the GitLab key and the GitHub secret, then run the mirror manually to confirm.
+
+## Technologies
+
+- [Docusaurus 3](https://docusaurus.io) — static site generator; Markdown/MDX pages
+- [React 19](https://react.dev) — the custom landing and team pages
+- [MDX](https://mdxjs.com) — React components inside Markdown
+- [KaTeX](https://katex.org) via `remark-math` / `rehype-katex` — LaTeX math
+- [Mermaid](https://mermaid.js.org) — diagrams in ` ```mermaid ` code blocks
+- [Recharts](https://recharts.org) — charts from your own data
+- [TypeScript](https://www.typescriptlang.org) — config and sidebars

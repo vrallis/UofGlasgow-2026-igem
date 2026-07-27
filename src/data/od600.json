@@ -1,0 +1,11 @@
+[
+  { "time": 0,  "wt": 0.05, "mutant": 0.05 },
+  { "time": 2,  "wt": 0.09, "mutant": 0.08 },
+  { "time": 4,  "wt": 0.21, "mutant": 0.16 },
+  { "time": 6,  "wt": 0.46, "mutant": 0.31 },
+  { "time": 8,  "wt": 0.83, "mutant": 0.52 },
+  { "time": 10, "wt": 1.21, "mutant": 0.74 },
+  { "time": 12, "wt": 1.48, "mutant": 0.91 },
+  { "time": 14, "wt": 1.59, "mutant": 1.02 },
+  { "time": 16, "wt": 1.63, "mutant": 1.07 }
+]
